@@ -1,53 +1,106 @@
-CREATE OR REPLACE PROCEDURE loop_test_2_calls()
+--postgre
+CREATE OR REPLACE PROCEDURE test_2(p1 DATE, p2 TIMESTAMP, p3 DATE)
+LANGUAGE plpgsql AS $$ BEGIN RAISE NOTICE 'Called: %, %, %', p1, p2, p3; END; $$;
+
+CREATE TABLE IF NOT EXISTS params_table (
+    param1 DATE,
+    param2 TIMESTAMP, 
+    param3 DATE
+);
+
+TRUNCATE params_table;
+
+INSERT INTO params_table (param1, param2, param3) VALUES
+    ('2025-02-06', '2025-02-12 09:38:25.999982', '2025-01-28'),
+    ('2025-02-14', '2025-02-14 16:17:14.095384', '2025-02-06'),
+    ('2025-02-20', '2025-02-21 08:41:53.643244', '2025-02-14'),
+    ('2025-02-25', '2025-03-11 15:52:28.575590', '2025-02-20'),
+    ('2025-03-06', '2025-03-13 15:35:21.729785', '2025-02-25'),
+    ('2025-03-13', '2025-03-13 16:32:27.178218', '2025-03-06'),
+    ('2025-03-20', '2025-03-26 08:35:19.585812', '2025-03-13'),
+    ('2025-03-27', '2025-03-28 07:23:03.611707', '2025-03-20'),
+    ('2025-04-07', '2025-04-08 18:57:03.804270', '2025-03-27'),
+    ('2025-04-10', '2025-04-15 11:19:51.275211', '2025-04-07'),
+    ('2025-04-14', '2025-04-15 14:34:32.097939', '2025-04-10'),
+    ('2025-04-24', '2025-04-24 14:41:48.705573', '2025-04-14'),
+    ('2025-05-02', '2025-05-08 11:05:44.640510', '2025-04-24'),
+    ('2025-05-15', '2025-05-21 10:00:08.361011', '2025-05-02'),
+    ('2025-05-22', '2025-05-28 08:07:06.096731', '2025-05-15'),
+    ('2025-05-29', '2025-05-30 10:01:45.906511', '2025-05-22'),
+    ('2025-06-05', '2025-06-09 09:22:04.668390', '2025-05-29'),
+    ('2025-06-19', '2025-07-03 08:27:40.115104', '2025-06-05'),
+    ('2025-06-26', '2025-07-03 09:15:38.292950', '2025-06-19'),
+    ('2025-07-03', '2025-07-07 10:53:30.915895', '2025-06-26');
+
+
+CREATE OR REPLACE PROCEDURE execute_test_2_cycle()
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_start_date DATE;
-    v_prev_start_date DATE := '2025-01-28';
-    v_loop_start DATE := '2025-02-06';
-    v_loop_end DATE := '2025-07-03';
-    v_interval INTERVAL := '7 days';
-    v_param2_date DATE;
+    rec RECORD;
 BEGIN
-    FOR v_start_date IN SELECT generate_series(
-                                v_loop_start,
-                                v_loop_end,
-                                v_interval
-                            )::DATE
+    FOR rec IN (SELECT param1, param2, param3 FROM params_table ORDER BY param1)
     LOOP
-        v_param2_date := v_start_date + interval '6 days';
-        CALL test_2(v_start_date, v_param2_date::timestamp, v_prev_start_date);
-        v_prev_start_date := v_start_date;
+        CALL test_2(rec.param1, rec.param2, rec.param3);
     END LOOP;
 END;
 $$;
 
--- CALL loop_test_2_calls();
+CALL execute_test_2_cycle();
 
-CREATE OR REPLACE PROCEDURE loop_test_2_calls()
-RETURNS VARCHAR 
+--решение SNOWFLAKE
+
+CREATE OR REPLACE PROCEDURE test_2(p1 DATE, p2 TIMESTAMP, p3 DATE)
+RETURNS VARCHAR LANGUAGE SQL AS $$ BEGIN RETURN 'OK'; END; $$;
+
+CREATE OR REPLACE TEMPORARY TABLE params_table (
+    param1 DATE,
+    param2 TIMESTAMP,
+    param3 DATE
+);
+
+INSERT INTO params_table (param1, param2, param3) VALUES
+    ('2025-02-06', '2025-02-12 09:38:25.999982000', '2025-01-28'),
+    ('2025-02-14', '2025-02-14 16:17:14.095384000', '2025-02-06'),
+    ('2025-02-20', '2025-02-21 08:41:53.643244000', '2025-02-14'),
+    ('2025-02-25', '2025-03-11 15:52:28.575590000', '2025-02-20'),
+    ('2025-03-06', '2025-03-13 15:35:21.729785000', '2025-02-25'),
+    ('2025-03-13', '2025-03-13 16:32:27.178218000', '2025-03-06'),
+    ('2025-03-20', '2025-03-26 08:35:19.585812000', '2025-03-13'),
+    ('2025-03-27', '2025-03-28 07:23:03.611707000', '2025-03-20'),
+    ('2025-04-07', '2025-04-08 18:57:03.804270000', '2025-03-27'),
+    ('2025-04-10', '2025-04-15 11:19:51.275211000', '2025-04-07'),
+    ('2025-04-14', '2025-04-15 14:34:32.097939000', '2025-04-10'),
+    ('2025-04-24', '2025-04-24 14:41:48.705573000', '2025-04-14'),
+    ('2025-05-02', '2025-05-08 11:05:44.640510000', '2025-04-24'),
+    ('2025-05-15', '2025-05-21 10:00:08.361011000', '2025-05-02'),
+    ('2025-05-22', '2025-05-28 08:07:06.096731000', '2025-05-15'),
+    ('2025-05-29', '2025-05-30 10:01:45.906511000', '2025-05-22'),
+    ('2025-06-05', '2025-06-09 09:22:04.668390000', '2025-05-29'),
+    ('2025-06-19', '2025-07-03 08:27:40.115104000', '2025-06-05'),
+    ('2025-06-26', '2025-07-03 09:15:38.292950000', '2025-06-19'),
+    ('2025-07-03', '2025-07-07 10:53:30.915895000', '2025-06-26');
+
+CREATE OR REPLACE PROCEDURE execute_test_2_cycle()
+RETURNS VARCHAR
 LANGUAGE SQL
 AS
 $$
 DECLARE
-    current_start_date DATE;
-    previous_start_date DATE DEFAULT '2025-01-28';
-    loop_start DATE DEFAULT '2025-02-06';
-    loop_end DATE DEFAULT '2025-07-03';
-    interval_days INTEGER DEFAULT 7;
-    param2_date DATE;
+    v1 DATE;
+    v2 TIMESTAMP;
+    v3 DATE;
+    c1 CURSOR FOR SELECT param1, param2, param3 FROM params_table ORDER BY param1;
 BEGIN
-    current_start_date := loop_start;
-
-    WHILE (current_start_date <= loop_end) DO
-        param2_date := DATEADD(day, 6, current_start_date);
-        CALL test_2(:current_start_date, :param2_date::TIMESTAMP, :previous_start_date);
-        previous_start_date := current_start_date;
-        current_start_date := DATEADD(day, interval_days, current_start_date);
-    END WHILE;
-
-    RETURN 'Loop completed.';
+    OPEN c1;
+    FOR rec IN c1 DO
+        v1 := rec.param1;
+        v2 := rec.param2;
+        v3 := rec.param3;
+        CALL test_2(:v1, :v2, :v3);
+    END FOR;
+    RETURN 'Completed';
 END;
 $$;
 
--- CALL loop_test_2_calls();
+CALL execute_test_2_cycle();
